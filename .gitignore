@@ -1,0 +1,11 @@
+*.pdf
+*/*db/*
+*/output_files/*
+*/simulation/*
+*.bak
+*.rpt
+*.qpf
+*.qsf
+*.qws
+*.bsf
+*/.qsys_edit/*
