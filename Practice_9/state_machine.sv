@@ -36,22 +36,31 @@ module state_machine(
 					nextstate = IDLE;
 			end
 			STATE1: begin
-				if (counter >= state1_duration - 1)
-					nextstate = STATE2;
+				if (enable)
+					if (counter >= state1_duration - 1)
+						nextstate = STATE2;
+					else
+						nextstate = STATE1;
 				else
-					nextstate = STATE1;
+					nextstate = IDLE; 
 			end
 			STATE2: begin
-				if (counter >= state2_duration - 1)
-					nextstate = STATE3;
+				if (enable)
+					if (counter >= state2_duration - 1)
+						nextstate = STATE3;
+					else
+						nextstate = STATE2;
 				else
-					nextstate = STATE2;
+					nextstate = IDLE; 
 			end
 			STATE3: begin
-				if (counter >= state3_duration - 1)
-					nextstate = END_STATE;
+				if (enable)
+					if (counter >= state3_duration - 1)
+						nextstate = END_STATE;
+					else
+						nextstate = STATE3;
 				else
-					nextstate = STATE3;
+					nextstate = IDLE;
 			end
 			END_STATE: begin
 				if (!enable)
@@ -66,7 +75,7 @@ module state_machine(
 	// output logic
 	always_comb begin
 		case (state)
-			IDLE: begin
+			IDLE, STATE2, default: begin
 				done = 1'b0;
 				irrigation_active = 1'b0;
 				ventilation_active = 1'b0;
@@ -76,11 +85,6 @@ module state_machine(
 				irrigation_active = 1'b1;
 				ventilation_active = 1'b0;
 			end
-			STATE2: begin
-				done = 1'b0;
-				irrigation_active = 1'b0;
-				ventilation_active = 1'b0;
-			end
 			STATE3: begin
 				done = 1'b0;
 				irrigation_active = 1'b0;
@@ -88,11 +92,6 @@ module state_machine(
 			end
 			END_STATE: begin
 				done = 1'b1;
-				irrigation_active = 1'b0;
-				ventilation_active = 1'b0;
-			end
-			default: begin
-				done = 1'b0;
 				irrigation_active = 1'b0;
 				ventilation_active = 1'b0;
 			end
