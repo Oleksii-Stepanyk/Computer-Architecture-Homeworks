@@ -4,8 +4,8 @@ module DataMemory(
     input logic [31:0] A,
     input logic [31:0] WD,
     output logic [31:0] RD,
-    output logic [31:0] config_reg,
-    input logic [31:0] status_reg_in
+    output logic [31:0] config_register,
+    input logic [31:0] status_register
 );
 
     logic [31:0] memory [63:0];
@@ -19,7 +19,7 @@ module DataMemory(
 
     always_comb begin
         if (A[31:2] == STATUS_ADDR)
-            RD = status_reg_in;
+            RD = status_register;
         else
             RD = memory[A[31:2]];
     end
@@ -30,6 +30,6 @@ module DataMemory(
         end
     end
     
-    assign config_reg = memory[CONFIG_ADDR];
+    assign config_register = memory[CONFIG_ADDR];
 
 endmodule
