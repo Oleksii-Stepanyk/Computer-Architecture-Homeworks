@@ -75,7 +75,7 @@ module state_machine(
 	// output logic
 	always_comb begin
 		case (state)
-			IDLE, STATE2, default: begin
+			IDLE, STATE2: begin
 				done = 1'b0;
 				irrigation_active = 1'b0;
 				ventilation_active = 1'b0;
@@ -92,6 +92,11 @@ module state_machine(
 			end
 			END_STATE: begin
 				done = 1'b1;
+				irrigation_active = 1'b0;
+				ventilation_active = 1'b0;
+			end
+			default: begin
+				done = 1'b0;
 				irrigation_active = 1'b0;
 				ventilation_active = 1'b0;
 			end
