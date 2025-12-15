@@ -14,7 +14,7 @@ module DataMemory(
     parameter STATUS_ADDR = 6'd11;
 
     initial begin
-        $readmemh("C:\\Users\\Heilstah\\AppData\\Local\\quartus\\Practice_8\\program.data", memory);
+        $readmemh("C:\\Users\\Heilstah\\Workspace\\CompArchHW\\Practice_9\\prog.data", memory);
     end
 
     always_comb begin

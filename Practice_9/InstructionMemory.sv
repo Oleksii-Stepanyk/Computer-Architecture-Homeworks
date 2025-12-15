@@ -6,7 +6,7 @@ module InstructionMemory (
     logic [31:0] memory [63:0];
 
     initial begin
-        $readmemh("C:\\Users\\Heilstah\\AppData\\Local\\quartus\\Practice_8\\program.mem", memory);
+        $readmemh("C:\\Users\\Heilstah\\Workspace\\CompArchHW\\Practice_9\\prog.mem", memory);
     end
 
     assign RD = memory[A[31:2]];
