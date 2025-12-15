@@ -1,104 +1,134 @@
 `timescale 1ns/1ns
 
 module state_machine_tb;
-	logic clk, reset;
-	logic ready, add_sub;
-	logic [3:0] a, b;
-	logic [3:0] out_res;
-	logic out_valid;
+    logic clk, reset;
+    logic enable;
+    logic [7:0] state1_duration, state2_duration, state3_duration;
+    logic done;
+    logic irrigation_active, ventilation_active;
+    
+    state_machine DUT (
+        .clk(clk),
+        .reset(reset),
+        .enable(enable),
+        .state1_duration(state1_duration),
+        .state2_duration(state2_duration),
+        .state3_duration(state3_duration),
+        .done(done),
+        .irrigation_active(irrigation_active),
+        .ventilation_active(ventilation_active)
+    );
+    
+    initial clk = 0;
+    always #5 clk = ~clk;
+    
+	// Main Test Sequence
+    initial begin
+        $display("=== State Machine Standalone Test ===");
+        
+        reset = 1;
+        enable = 0;
+        state1_duration = 8'd0;
+        state2_duration = 8'd0;
+        state3_duration = 8'd0;
+        
+        #15;
+        reset = 0;
+        #10;
+        
+        $display("\n--- Test 1: Short durations (5, 3, 4) ---");
+        state1_duration = 8'd5;
+        state2_duration = 8'd3;
+        state3_duration = 8'd4;
+        
+        @(posedge clk);
+        enable = 1;
+        $display("Time=%0t: Enabled FSM", $time);
+        
+        @(posedge done);
+        $display("Time=%0t: FSM cycle completed (done=1)", $time);
+        
+        @(posedge clk);
+        enable = 0;
+        $display("Time=%0t: Disabled FSM", $time);
+        
+        #20;
+        
+        $display("\n--- Test 2: Medium durations (10, 8, 6) ---");
+        state1_duration = 8'd10;
+        state2_duration = 8'd8;
+        state3_duration = 8'd6;
+        
+        @(posedge clk);
+        enable = 1;
+        $display("Time=%0t: Enabled FSM", $time);
+        
+        @(posedge done);
+        $display("Time=%0t: FSM cycle completed (done=1)", $time);
+        
+        @(posedge clk);
+        enable = 0;
+        $display("Time=%0t: Disabled FSM", $time);
+        
+        #40;
+        
+        $display("\n--- Test 3: Longer durations (15, 12, 10) ---");
+        state1_duration = 8'd15;
+        state2_duration = 8'd12;
+        state3_duration = 8'd10;
+        
+        @(posedge clk);
+        enable = 1;
+        $display("Time=%0t: Enabled FSM", $time);
+        
+        @(posedge done);
+        $display("Time=%0t: FSM cycle completed (done=1)", $time);
+        
+        @(posedge clk);
+        enable = 0;
+        $display("Time=%0t: Disabled FSM", $time);
+        
+        #40;
 
-	state_machine DUT (
-		.clk(clk),
-		.reset(reset),
-		.ready(ready),
-		.add_sub(add_sub),
-		.a(a),
-		.b(b),
-		.out_res(out_res),
-		.out_valid(out_valid)
-	);
-
-	initial clk = 0;
-	always #5 clk = ~clk;
-
-	task automatic do_op(input logic do_add, input [3:0] a_i, input [3:0] b_i);
-		logic [3:0] exp;
-		begin
-			a       <= a_i;
-			b       <= b_i;
-			add_sub <= do_add;
-			ready   <= 1'b1;
-
-			@(posedge clk); // INIT -> RDY
-			@(posedge clk); // RDY  -> ADD/SUB (result cycle)
-			@(posedge clk); // ADD/SUB set
-
-			exp = do_add ? (a_i + b_i) : (a_i - b_i);
-
-			if (!out_valid) begin
-				$display(1, "[%0t] out_valid not asserted in result cycle", $time);
-			end
-
-			if (out_res !== exp) begin
-				$display(1, "[%0t] Mismatch: %s a=%0d b=%0d got=%0d exp=%0d",
-						$time, do_add ? "ADD" : "SUB", a_i, b_i, out_res, exp);
-			end
-				$display("[%0t] PASS: %s a=%0d b=%0d -> out_res=%0d",
-						$time, do_add ? "ADD" : "SUB", a_i, b_i, out_res);
-
-			ready <= 1'b0;
-			@(posedge clk); // ADD/SUB -> INIT
-
-			if (out_valid !== 1'b0) $display(1, "[%0t] out_valid should be 0 after result cycle", $time);
-		end
-	endtask
-
-	initial begin
-		reset   = 1;
-		ready   = 0;
-		add_sub = 0;
-		a = 0; b = 0;
-	
-		@(posedge clk);
-		reset = 1'b0;
-	
-		@(posedge clk);
-		if (out_valid !== 1'b0) $display(1, "[%0t] out_valid should be 0 while idle", $time);
-		if (out_res   !== 4'd0) $display(1, "[%0t] out_res should be 0 while idle", $time);
-	
-		do_op(1, 4'd3,  4'd5);  // ADD 3+5=8
-		do_op(0, 4'd9,  4'd2);  // SUB 9-2=7
-	
-		do_op(1, 4'd15, 4'd1);  // ADD 15+1=0 (wrap)
-		do_op(0, 4'd0,  4'd1);  // SUB 0-1=15 (wrap)
-	
-		a = 4'd4; b = 4'd6; add_sub = 1'b1; ready = 1'b1;
-		@(posedge clk); // INIT -> RDY
-		@(posedge clk); // RDY -> ADD
-		@(posedge clk); // ADD set
-		
-		if (!(out_valid && out_res === (a + b))) $display(1, "[%0t] back-to-back op1 failed", $time);
-	
-		a = 4'd10; b = 4'd3; add_sub = 1'b0;
-		@(posedge clk); // INIT -> RDY
-		@(posedge clk); // RDY -> SUB
-		@(posedge clk); // SUB set
-		
-		if (!(out_valid && out_res === (a - b))) $display(1, "[%0t] back-to-back op2 failed", $time);
-		ready = 1'b0;
-		@(posedge clk); // SUB -> INIT
-	
-		a = 4'd2; b = 4'd2; add_sub = 1'b1; ready = 1'b1;
-		@(posedge clk); // INIT -> RDY
-		
-		reset = 1'b1;
-		@(posedge clk); // RDY -> INIT
-	
-		reset = 1'b0; ready = 1'b0;
-		if (out_valid !== 1'b0) $display(1, "[%0t] out_valid should be 0 after reset", $time);
-		@(posedge clk);
-	
-		$display("[%0t] All tests passed", $time);
-		$stop;
-	end
+		$display("\n--- Test 4: Disable during operation (15, 12, 10) ---");
+        state1_duration = 8'd15;
+        state2_duration = 8'd12;
+        state3_duration = 8'd10;
+        
+        @(posedge clk);
+        enable = 1;
+        $display("Time=%0t: Enabled FSM", $time);
+        
+        @(posedge irrigation_active);
+        $display("Time=%0t: First State Active", $time);
+        enable = 0;
+        $display("Time=%0t: Disabled FSM", $time);
+        
+        #100;
+        
+        $display("\n=== All Tests Completed Successfully ===");
+        $stop;
+    end
+    
+	// Display when actuators are active
+    always @(posedge clk) begin
+        if (irrigation_active)
+            $display("Time=%0t: STATE1 - Irrigation active", $time);
+        if (ventilation_active)
+            $display("Time=%0t: STATE3 - Ventilation active", $time);
+    end
+    
+	// Detect invalid states
+    always @(posedge clk) begin
+        if (irrigation_active && ventilation_active) begin
+            $display("ERROR: Both irrigation and ventilation active at time %0t", $time);
+            $stop;
+        end
+        
+        if (done && (irrigation_active || ventilation_active)) begin
+            $display("ERROR: done=1 while actuators active at time %0t", $time);
+            $stop;
+        end
+    end
+    
 endmodule
